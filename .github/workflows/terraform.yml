@@ -1,0 +1,49 @@
+name: "Terraform CI/CD Pipeline"
+
+# 1. いつこのパイプラインを動かすか（トリガー設定）
+on:
+  push:
+    branches:
+      - main # mainブランチにコードがマージされた時
+  pull_request: # プルリクエストが作成・更新された時
+
+# 2. OIDC認証のための権限設定（必須）
+permissions:
+  id-token: write # AWSから一時的な鍵をもらうために必要
+  contents: read  # リポジトリのコードを読み込むために必要
+
+# 3. 実際の作業手順（ジョブ）
+jobs:
+  terraform:
+    name: "Terraform Plan and Apply"
+    runs-on: ubuntu-latest # GitHubが用意する仮想サーバー（Linux）で実行
+
+    steps:
+      # 手順1: GitHubリポジトリのコードを仮想サーバーにダウンロード
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 手順2: 仮想サーバーにTerraformをインストール
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 手順3: AWSへの認証（ここでOIDCを使って安全にログインします）
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # GitHub SecretsからARNを読み込む
+          aws-region: ap-northeast-1
+
+      # 手順4: Terraformの初期化
+      - name: Terraform Init
+        run: terraform init
+
+      # 手順5: 【PR作成時のみ実行】 差分の確認（Plan）
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+
+      # 手順6: 【mainマージ時のみ実行】 実際の構築（Apply）
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
