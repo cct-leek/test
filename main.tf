@@ -107,6 +107,15 @@ resource "aws_security_group" "test_sg" {
     cidr_blocks = ["202.230.171.193/32"]
   }
 
+  # インバウンドルール: 指定IPからのMySQL許可
+  ingress {
+    description = "Allow MySQL from specific IP"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["202.230.171.193/32"]
+  }
+
   # アウトバウンドルール: 全て許可
   egress {
     from_port   = 0
