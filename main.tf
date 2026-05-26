@@ -3,7 +3,6 @@
 # ---------------------------------------------
 provider "aws" {
   region = "ap-northeast-1" # 
-  profile = "cct"
 }
 
 # ---------------------------------------------
@@ -177,6 +176,5 @@ terraform {
     key     = "terraform.tfstate"
     region  = "ap-northeast-1"
     encrypt = true
-    profile = "cct"
   }
 }
